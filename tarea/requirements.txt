@@ -1,0 +1,14 @@
+pandas
+numpy
+scipy
+matplotlib
+seaborn
+plotly
+streamlit
+googlemaps
+tqdm
+unidecode
+ipython
+ipykernel
+notebook
+nbformat

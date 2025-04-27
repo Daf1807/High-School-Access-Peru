@@ -1,0 +1,312 @@
+import re
+import time 
+from datetime import date
+import pandas as pd
+import json
+import googlemaps
+import pprint
+import pandas as pd
+import numpy as np
+import os
+import urllib.request, json
+import csv
+from tqdm import tqdm_notebook as tqdm
+import unidecode
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import streamlit as st
+import pandas as pd
+import os
+###################
+## Colegio DAta
+#############
+import pandas as pd
+import os
+final_df  = pd.read_excel('archivo_final.xlsx')
+final_df
+#print(final_df.columns)
+###################
+## SHAPE FILE
+#############
+maps = gpd.read_file(r'C:\Users\usuario\Documents\GitHub\Data-Science-Python\_data\shape_file\DISTRITOS.shp')
+maps
+# Select only relevant columns
+maps = maps[['UBIGEO', 'geometry']]
+maps = maps.rename({'UBIGEO':'UBIGEO'}, axis =1 )
+maps
+# Plot using geopandas
+
+#figure and axis
+fig, ax = plt.subplots(figsize=(20, 20))
+
+maps.plot(  ax=ax, color='midnightblue', linestyle='dotted',
+            edgecolor='white' )
+plt.show()
+###################
+## MERGE:COLEGIO DATA & SHAPE FILE : (TAREA 1)
+#############
+import geopandas as gpd
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# -------------------------------
+# 1. Clasificación de niveles
+# -------------------------------
+def clasificar_nivel(nivel):
+    if isinstance(nivel, str):
+        if 'Inicial' in nivel:
+            return 'Inicial'
+        elif 'Primaria' in nivel:
+            return 'Primaria'
+        elif 'Secundaria' in nivel:
+            return 'Secundaria'
+    return None
+
+# Aplicar la función
+final_df['Nivel_Simple'] = final_df['Nivel / Modalidad'].apply(clasificar_nivel)
+
+# -------------------------------
+# 2. Contar colegios por distrito y nivel
+# -------------------------------
+conteo_niveles = final_df.groupby(['Distrito', 'Nivel_Simple']).size().reset_index(name='Cantidad')
+
+# Crear un dataframe por nivel
+inicial_df = conteo_niveles[conteo_niveles['Nivel_Simple'] == 'Inicial']
+primaria_df = conteo_niveles[conteo_niveles['Nivel_Simple'] == 'Primaria']
+secundaria_df = conteo_niveles[conteo_niveles['Nivel_Simple'] == 'Secundaria']
+
+# -------------------------------
+# 3. Preparar UBIGEO para merge
+# -------------------------------
+
+# Asegurarse de que los UBIGEO estén como enteros
+maps['UBIGEO'] = maps['UBIGEO'].astype(int)
+final_df['Ubigeo'] = final_df['Ubigeo'].astype(int)
+
+# Eliminar columna Ubigeo en los dataframes por nivel si ya existiera
+inicial_df = inicial_df.drop(columns=['Ubigeo'], errors='ignore')
+primaria_df = primaria_df.drop(columns=['Ubigeo'], errors='ignore')
+secundaria_df = secundaria_df.drop(columns=['Ubigeo'], errors='ignore')
+
+# Mergear para agregar Ubigeo a cada nivel
+inicial_df = inicial_df.merge(final_df[['Distrito', 'Ubigeo']], on='Distrito', how='left').drop_duplicates()
+primaria_df = primaria_df.merge(final_df[['Distrito', 'Ubigeo']], on='Distrito', how='left').drop_duplicates()
+secundaria_df = secundaria_df.merge(final_df[['Distrito', 'Ubigeo']], on='Distrito', how='left').drop_duplicates()
+
+# -------------------------------
+# 4. Unión con shapefile
+# -------------------------------
+map_inicial = maps.merge(inicial_df, left_on='UBIGEO', right_on='Ubigeo', how='left')
+map_primaria = maps.merge(primaria_df, left_on='UBIGEO', right_on='Ubigeo', how='left')
+map_secundaria = maps.merge(secundaria_df, left_on='UBIGEO', right_on='Ubigeo', how='left')
+
+# Rellenar valores faltantes en la columna 'Cantidad' con 0
+map_inicial['Cantidad'] = map_inicial['Cantidad'].fillna(0)
+map_primaria['Cantidad'] = map_primaria['Cantidad'].fillna(0)
+map_secundaria['Cantidad'] = map_secundaria['Cantidad'].fillna(0)
+
+# -------------------------------
+# 5. Función para graficar mapas
+# -------------------------------
+def plot_map(gdf, title, cmap='viridis'):
+    fig, ax = plt.subplots(figsize=(12, 12))
+    gdf.plot(
+        column='Cantidad',
+        ax=ax,
+        legend=True,
+        cmap=cmap,
+        edgecolor='white',
+        linewidth=0.5,
+        missing_kwds={"color": "lightgrey", "label": "Sin datos"}
+    )
+    ax.set_title(title, fontsize=16)
+    ax.axis('off')
+    plt.show()
+# Contar y sumar colegios nivel Inicial por distrito
+conteo_inicial = final_df[final_df['Nivel_Simple'] == 'Inicial'].groupby('Distrito').size().reset_index(name='Cantidad')
+conteo_inicial = conteo_inicial.merge(final_df[['Distrito', 'Ubigeo']].drop_duplicates(), on='Distrito', how='left')
+map_inicial = maps.merge(conteo_inicial, left_on='UBIGEO', right_on='Ubigeo', how='left')
+map_inicial['Cantidad'] = map_inicial['Cantidad'].fillna(0)
+
+# Graficar
+plot_map(map_inicial, "Distribución de Colegios de Nivel Inicial por Distrito", cmap='Oranges')
+# Contar y sumar colegios nivel Primaria por distrito
+conteo_primaria = final_df[final_df['Nivel_Simple'] == 'Primaria'].groupby('Distrito').size().reset_index(name='Cantidad')
+conteo_primaria = conteo_primaria.merge(final_df[['Distrito', 'Ubigeo']].drop_duplicates(), on='Distrito', how='left')
+map_primaria = maps.merge(conteo_primaria, left_on='UBIGEO', right_on='Ubigeo', how='left')
+map_primaria['Cantidad'] = map_primaria['Cantidad'].fillna(0)
+
+# Graficar
+plot_map(map_primaria, "Distribución de Colegios de Nivel Primaria por Distrito", cmap='Blues')
+# Contar y sumar colegios nivel Secundaria por distrito
+conteo_secundaria = final_df[final_df['Nivel_Simple'] == 'Secundaria'].groupby('Distrito').size().reset_index(name='Cantidad')
+conteo_secundaria = conteo_secundaria.merge(final_df[['Distrito', 'Ubigeo']].drop_duplicates(), on='Distrito', how='left')
+map_secundaria = maps.merge(conteo_secundaria, left_on='UBIGEO', right_on='Ubigeo', how='left')
+map_secundaria['Cantidad'] = map_secundaria['Cantidad'].fillna(0)
+
+# Graficar
+plot_map(map_secundaria, "Distribución de Colegios de Nivel Secundaria por Distrito", cmap='Greens')
+###################
+## TAREA 2 :ANALISIS DE PROXIMIDAD
+#############
+import geopandas as gpd
+from shapely.geometry import Point
+import matplotlib.pyplot as plt
+
+# 🔹 Crear geometría
+final_df = final_df.dropna(subset=['Latitud', 'Longitud'])
+final_df['geometry'] = final_df.apply(lambda row: Point(row['Longitud'], row['Latitud']), axis=1)
+gdf = gpd.GeoDataFrame(final_df, geometry='geometry', crs='EPSG:4326')
+
+# 🔹 Reproyectar a UTM para cálculo en metros
+gdf = gdf.to_crs(epsg=32718)
+
+# 🔹 Filtrar por provincias
+gdf_huancavelica = gdf[gdf['Provincia'].str.upper() == 'HUANCAVELICA']
+gdf_huancayo = gdf[gdf['Provincia'].str.upper() == 'HUANCAYO']
+
+def analizar_provincia(gdf_provincia, nombre_provincia):
+    print(f"\n📍 Análisis para {nombre_provincia}")
+
+    # Separar primarias y secundarias
+    primarias = gdf_provincia[gdf_provincia['Nivel_Simple'] == 'Primaria'].copy()
+    secundarias = gdf_provincia[gdf_provincia['Nivel_Simple'] == 'Secundaria'].copy()
+
+    # Crear buffers
+    primarias['buffer_5km'] = primarias.geometry.buffer(5000)
+
+    # Contar secundarias dentro del buffer
+    conteos = []
+    for idx, primaria in primarias.iterrows():
+        buffer_geom = primaria['buffer_5km']
+        dentro = secundarias[secundarias.geometry.within(buffer_geom)]
+        conteos.append(len(dentro))
+
+    primarias['secundarias_cercanas'] = conteos
+
+    # Identificar mínima y máxima
+    min_primaria = primarias.loc[primarias['secundarias_cercanas'].idxmin()]
+    max_primaria = primarias.loc[primarias['secundarias_cercanas'].idxmax()]
+
+    print("🔵 Menos secundarias:", min_primaria['Nombre de SS.EE.'], "-", min_primaria['secundarias_cercanas'])
+    print("🟢 Más secundarias:", max_primaria['Nombre de SS.EE.'], "-", max_primaria['secundarias_cercanas'])
+
+    # Función para graficar
+    def graficar(primaria, titulo):
+        buffer_geom = primaria['buffer_5km']
+        centro_geom = primaria.geometry
+        secundarias_en_radio = secundarias[secundarias.geometry.within(buffer_geom)]
+
+        fig, ax = plt.subplots(figsize=(10, 10))
+        gpd.GeoSeries(buffer_geom).plot(ax=ax, edgecolor='red', facecolor='none', linewidth=2, label='Radio 5km')
+        gpd.GeoSeries(centro_geom).plot(ax=ax, color='red', markersize=50, label='Primaria')
+        secundarias_en_radio.plot(ax=ax, color='blue', markersize=20, label='Secundarias cercanas')
+
+        ax.set_title(f'{titulo} ({nombre_provincia})', fontsize=14)
+        ax.legend()
+        ax.axis('off')
+        plt.show()
+
+    # Graficar mínimo y máximo
+    graficar(min_primaria, 'Escuela con MENOS secundarias cercanas')
+    graficar(max_primaria, 'Escuela con MÁS secundarias cercanas')
+
+# 🔹 Ejecutar para Huancavelica y Huancayo
+analizar_provincia(gdf_huancavelica, "Huancavelica")
+analizar_provincia(gdf_huancayo, "Huancayo")
+###################
+## TAREA 3
+#############
+import geopandas as gpd
+import folium
+from folium import Circle, CircleMarker
+
+# Reproyectar a EPSG:4326 (para Folium)
+gdf = gdf.to_crs(epsg=4326)
+
+def crear_mapa_provincia(nombre_provincia):
+    # Filtrar la provincia
+    gdf_prov = gdf[gdf['Provincia'].str.upper() == nombre_provincia.upper()]
+    
+    # Separar por nivel
+    primarias = gdf_prov[gdf_prov['Nivel_Simple'] == 'Primaria'].copy()
+    secundarias = gdf_prov[gdf_prov['Nivel_Simple'] == 'Secundaria'].copy()
+
+    # Reproyectar a metros para cálculos de distancia
+    primarias_m = primarias.to_crs(epsg=32718)
+    secundarias_m = secundarias.to_crs(epsg=32718)
+
+    # Calcular buffers y contar secundarias cercanas
+    primarias_m['buffer_5km'] = primarias_m.geometry.buffer(5000)
+    conteos = []
+    ids_secundarias = []
+
+    for idx, primaria in primarias_m.iterrows():
+        buffer_geom = primaria['buffer_5km']
+        dentro = secundarias_m[secundarias_m.geometry.within(buffer_geom)]
+        conteos.append(len(dentro))
+        ids_secundarias.append(dentro.index.tolist())
+
+    # Agregar conteos a la versión en EPSG:4326
+    primarias['secundarias_cercanas'] = conteos
+    primarias['ids_secundarias'] = ids_secundarias
+
+    # Identificar primaria con más y menos secundarias cercanas
+    min_primaria = primarias.loc[primarias['secundarias_cercanas'].idxmin()]
+    max_primaria = primarias.loc[primarias['secundarias_cercanas'].idxmax()]
+
+    # Crear mapa centrado en la primaria con menos secundarias
+    mapa = folium.Map(location=[min_primaria.geometry.y, min_primaria.geometry.x], zoom_start=11)
+
+    def agregar_caso(primaria, color, titulo):
+        lat, lon = primaria.geometry.y, primaria.geometry.x
+
+        folium.Marker(
+            location=[lat, lon],
+            popup=f"{titulo}: {primaria['Nombre de SS.EE.']}<br>Secundarias cercanas: {primaria['secundarias_cercanas']}",
+            icon=folium.Icon(color=color)
+        ).add_to(mapa)
+
+        Circle(
+            location=[lat, lon],
+            radius=5000,
+            color=color,
+            fill=True,
+            fill_opacity=0.1
+        ).add_to(mapa)
+
+        # Agregar secundarias cercanas
+        ids = primaria['ids_secundarias']
+        secundarias_dentro = secundarias.loc[ids]
+        for _, row in secundarias_dentro.iterrows():
+            CircleMarker(
+                location=[row.geometry.y, row.geometry.x],
+                radius=3,
+                color='blue',
+                fill=True,
+                fill_opacity=0.7
+            ).add_to(mapa)
+
+    # Agregar ambas primarias destacadas
+    agregar_caso(min_primaria, 'red', 'MENOS Secundarias')
+    agregar_caso(max_primaria, 'green', 'MÁS Secundarias')
+
+    # Guardar mapa
+    mapa.save(f"mapa_proximidad_{nombre_provincia.lower()}.html")
+    print(f"✅ Mapa de {nombre_provincia.title()} guardado.")
+
+# Ejecutar para ambas provincias
+crear_mapa_provincia('HUANCAVELICA')
+crear_mapa_provincia('HUANUCO')
+
+
+
+
+
+
+
+
+
+
+
