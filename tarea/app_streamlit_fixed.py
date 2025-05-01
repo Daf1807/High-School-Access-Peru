@@ -141,9 +141,9 @@ with tab2:
         
         # Mapas estáticos de Huancavelica - Usando rutas absolutas correctas
         huancavelica_maps = [
-            "tarea/Huancavelica_inicial.png",
-            "tarea/Huancavelica_primaria.png",
-            "tarea/Huancavelica_secundaria.png"
+            "tarea/huancavelica_inicial.png",
+            "tarea/huancavelica_primaria.png",
+            "tarea/huancavelica_secundaria.png"
         ]
         
         for map_path in huancavelica_maps:
