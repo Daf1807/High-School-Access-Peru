@@ -141,9 +141,9 @@ with tab2:
         
         # Mapas estáticos de Huancavelica - Usando rutas absolutas correctas
         huancavelica_maps = [
-            "C:/Users/usuario/Documents/GitHub/High-School-Access-Peru/tarea/Huancavelica_inicial.png",
-            "C:/Users/usuario/Documents/GitHub/High-School-Access-Peru/tarea/Huancavelica_primaria.png",
-            "C:/Users/usuario/Documents/GitHub/High-School-Access-Peru/tarea/Huancavelica_secundaria.png"
+            "tarea/Huancavelica_inicial.png",
+            "tarea/Huancavelica_primaria.png",
+            "tarea/Huancavelica_secundaria.png"
         ]
         
         for map_path in huancavelica_maps:
@@ -156,9 +156,9 @@ with tab2:
         
         # Mapas estáticos de Ayacucho - Usando rutas absolutas correctas
         ayacucho_maps = [
-            "C:/Users/usuario/Documents/GitHub/High-School-Access-Peru/tarea/ayacucho_inicial.png",
-            "C:/Users/usuario/Documents/GitHub/High-School-Access-Peru/tarea/ayacucho_primaria.png",
-            "C:/Users/usuario/Documents/GitHub/High-School-Access-Peru/tarea/ayacucho_secundaria.png"
+            "tarea/ayacucho_inicial.png",
+            "tarea/ayacucho_primaria.png",
+            "tarea/ayacucho_secundaria.png"
         ]
         
         for map_path in ayacucho_maps:
@@ -173,7 +173,7 @@ with tab3:
     # Mapa dinámico de proximidad para Huancavelica
     st.subheader("Mapa de Proximidad - Huancavelica")
     
-    html_path = "C:/Users/usuario/Documents/GitHub/High-School-Access-Peru/tarea/mapa_proximidad_huancavelica.html"
+    html_path = "tarea/mapa_proximidad_huancavelica.html"
     display_html_file(html_path)
     
     st.write("""
