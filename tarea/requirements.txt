@@ -13,3 +13,4 @@ ipykernel
 notebook
 nbformat
 folium
+streamlit-folium
