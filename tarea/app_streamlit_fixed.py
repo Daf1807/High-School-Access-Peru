@@ -139,7 +139,6 @@ with tab2:
     with col1:
         st.subheader("Huancavelica")
         
-        # Mapas estáticos de Huancavelica - Usando rutas absolutas correctas
         huancavelica_maps = [
             "tarea/huancavelica_inicial.png",
             "tarea/huancavelica_primaria.png",
@@ -154,7 +153,6 @@ with tab2:
     with col2:
         st.subheader("Ayacucho")
         
-        # Mapas estáticos de Ayacucho - Usando rutas absolutas correctas
         ayacucho_maps = [
             "tarea/ayacucho_inicial.png",
             "tarea/ayacucho_primaria.png",
@@ -166,6 +164,18 @@ with tab2:
             st.write(f"**{level_name}**")
             display_image(map_path)
 
+    # Mapa general por nivel educativo
+    st.subheader("Mapa General por Nivel Educativo")
+
+    mapas_generales = [
+        ("Inicial", "tarea/mapa_inicial.png"),
+        ("Primaria", "tarea/mapa_primaria.png"),
+        ("Secundaria", "tarea/mapa_secundaria.png")
+    ]
+
+    for nivel, ruta in mapas_generales:
+        st.write(f"**{nivel}**")
+        display_image(ruta)
 # PESTAÑA 3: MAPAS DINÁMICOS
 with tab3:
     st.header("Mapas Dinámicos")
